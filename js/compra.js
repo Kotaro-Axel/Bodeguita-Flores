@@ -1,66 +1,63 @@
 const compra = new Carrito();
-const listaCompra = document.querySelector('#lista-compra tbody');
+const shopList = document.querySelector('#lista-compra tbody');
 const carrito = document.getElementById('carrito');
-const procesarCompraBtn = document.getElementById('procesar-compra');
-const cliente = document.getElementById('cliente');
-const correo = document.getElementById('correo');
+const process = document.getElementById('procesar-compra');
 
-cargarEventListeners();
+const client = document.getElementById('cliente');
+const mail = document.getElementById('correo')
 
-function cargarEventListeners() {
+loadEvents()
 
-    document.addEventListener('DOMContentLoaded', compra.leerLocalStorageCompra());
-
-    //Cuando se elimina curso carrito
-    carrito.addEventListener('click', (e)=>{compra.eliminarProducto(e)});
-
-    carrito.addEventListener('change', (e)=>{compra.obtenerEvento(e)});
-
-    compra.calcularTotal();
-
-    procesarCompraBtn.addEventListener('click', procesarCompra);
-
+function loadEvents() {
+    document.addEventListener('DOMContentLoaded', compra.loadCheckout());
+    carrito.addEventListener('click', (e)=>{compra.deleteProduct(e)});
+    process.addEventListener('click', processPayment)
+    compra.payment();
 }
 
-function procesarCompra(e){
-    if(compra.obtenerProductosLocalStorage().length === 0){            
+function processPayment(e){
+    e.preventDefault();
+    if (compra.getLocalStorageItems().length===0) {
         Swal.fire({
             type: 'error',
             title: 'Oops...',
-            text: 'No hay productos, regresa a comprar',
-            showConfirmButton: false,
-            timer: 2000
-        })
-        setTimeout(() => {
-            location.href="index.html";    
-        }, 2000);        
+            text: 'No hay productos en el carrito!',
+            timer: 2000,
+            showConfirmButton: false    
+        }).then((e)=>{
+            window.location = "index.html";
+        });
+    }else if(client.value===''||mail.value===''){
+        Swal.fire({
+            type: 'error',
+            title: 'Oops...',
+            text: 'Ingrese su Nombre y Email Correctamente',
+            timer: 2000,
+            showConfirmButton: false    
+        });
+    }else{
+        const GIF = document.querySelector('#cargando');
+        GIF.style.display = 'block';
+        const confirmation = document.createElement('img');
+        confirmation.src = "img/mail.gif";
+        confirmation.style.display="block";
+        confirmation.width = 150;
+        setTimeout(()=>{
+            GIF.style.display = 'none';
+            document.querySelector('#loaders').appendChild(confirmation);
+            setTimeout(()=>{
+                confirmation.remove();
+                compra.clearLocalStorage();
+                Swal.fire({
+                    type: 'success',
+                    title: '¡Genial!',
+                    text: 'Su compra ha sido realizada!',
+                    timer: 2000,
+                    showConfirmButton: false    
+                })
+                window.location="index.html";
+            }, 2000);
+        }, 3000);
     }
-    else{
-        // if (cliente.value !== '' && correo.value !== '') {
-            
-            const spinnerGif = document.querySelector('#spinner');
-            spinnerGif.style.display = 'block';
-  
-            //Gif que envia email
-            const enviado = document.createElement('img');
-            enviado.src = 'img/mail.gif';
-            enviado.style.display = 'block';
-            enviado.width = "150";
-  
-            //Ocultar sppiner y mstrar gif enviado
-            setTimeout(function () {
-                 spinnerGif.style.display = 'none';
-                 document.querySelector('#loaders').appendChild(enviado);
-  
-                 setTimeout(() => {
-                      enviado.remove();    
-                      compra.vaciarLocalStorage();
-                      location.href = "index.html";
-                 }, 4000);
-            }, 3000);
-            
-            e.preventDefault();    
-       }
-    // }
 }
 

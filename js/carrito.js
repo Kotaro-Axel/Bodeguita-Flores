@@ -1,246 +1,195 @@
-class Carrito {
-    
-    //Añade el curso al carrito
-    comprarProducto(e) {
-        e.preventDefault();
-        //Delegation para agregar carrito
-        if (e.target.classList.contains('agregar-carrito')) {
-            const curso = e.target.parentElement.parentElement;
+﻿class Carrito {
 
-            //console.log(curso);
-            //Enviamos curso seleccionado para tomar sus datos
-            this.leerDatosProducto(curso);
+    //AddProduct
+    addProduct(e) {
+        e.preventDefault();
+        if (e.target.classList.contains("agregar-carrito")) {
+            const product = e.target.parentElement.parentElement;
+            this.readProduct(product);
         }
     }
 
-    //leer datos del curso
-    leerDatosProducto(curso) {
-        const infoCurso = {
-            imagen: curso.querySelector('img').src,
-            titulo: curso.querySelector('h4').textContent,
-            precio: curso.querySelector('.precio span').textContent,
-            id: curso.querySelector('a').getAttribute('data-id'),
-            cantidad: 1
-        }
-        let cursosLS;
-        cursosLS = this.obtenerProductosLocalStorage();
-        cursosLS.forEach(function(cursoLS){
-            if(cursoLS.id === infoCurso.id){
-                cursosLS = cursoLS.id;
-            }   
-        });
+    //ReadProduct
+    readProduct(product){
 
-        if(cursosLS === infoCurso.id){
+        //Definir clase
+        const productInfo = {
+            image : product.querySelector('img').src,
+            tittle : product.querySelector('h4').textContent,
+            price : product.querySelector('.precio span').textContent,
+            id : product.querySelector('a').getAttribute('data-id'),
+            pieces : 1
+        }
+        let productsLS = this.getLocalStorageItems();
+        productsLS.forEach((productLS)=>{
+            if (productLS.id === productInfo.id) {
+                productsLS = productLS.id;
+            }
+        });
+        if (productsLS===productInfo.id) {
             Swal.fire({
                 type: 'info',
                 title: 'Oops...',
-                text: 'El producto ya está agregado',
-                showConfirmButton: false,
-                timer: 1000
-            })     
-        }
-        else {
-            this.insertarCarrito(infoCurso);
+                text: 'El producto ya esta en el carrito!',
+                timer: 1000,
+                showConfirmButton: false    
+            })
+        }else{
+           this.setProduct(productInfo); 
         }
     }
 
-    //muestra curso seleccionado en carrito
-    insertarCarrito(curso) {
-        const row = document.createElement('tr');
-        row.innerHTML = `
+    setProduct(product){
+        const item = document.createElement('tr');
+        item.innerHTML = `
             <td>
-                <img src="${curso.imagen}" width=100>
+                <img src="${product.image}" width=100>
             </td>
-            <td>${curso.titulo}</td>
-            <td>${curso.precio}</td>
+            <td>${product.tittle}</td>
+            <td>${product.price}</td>
+            <td>${product.tittle}</td>  
             <td>
-                <a href="#" class="borrar-curso fas fa-times-circle" data-id="${curso.id}"></a>
+                <a href="#" class="borrar-producto fas fa-times-circle" data-id="${product.id}">X</a>
             </td>
         `;
-        listaProductos.appendChild(row);
-        this.guardarProductoLocalStorage(curso);
+        productList.appendChild(item);
+        this.setProductsToLocalStorage(product);
     }
 
-    //Eliminar el curso del carrito en el DOM
-    eliminarProducto(e) {
+    //Eliminar Producto
+    deleteProduct(e){
         e.preventDefault();
-        let curso, cursoID;
-        if (e.target.classList.contains('borrar-curso')) {
+        let product, productiD;
+        if (e.target.classList.contains('borrar-producto')) {
             e.target.parentElement.parentElement.remove();
-            curso = e.target.parentElement.parentElement;
-            cursoID = curso.querySelector('a').getAttribute('data-id');
-        }        
-        this.eliminarProductoLocalStorage(cursoID);
-        this.calcularTotal();
+            product = e.target.parentElement.parentElement;
+            productiD = product.querySelector('a').getAttribute('data-id');
+        }
+        this.deleteProductfromLocalStore(productiD);
+        this.payment();
     }
 
-    //Elimina los productos del carrito
-    vaciarCarrito(e) {
-        e.preventDefault();
-        
-        while (listaProductos.firstChild) {
-            listaProductos.removeChild(listaProductos.firstChild);
+    clearCar(e){
+        e.preventDefault()
+        while(productList.firstChild){
+            productList.removeChild(productList.firstChild);
         }
-        
-        //Vaciar LS
-        this.vaciarLocalStorage();
-
+        this.clearLocalStorage();
         return false;
     }
 
-    //Almacenando en el ls
-    guardarProductoLocalStorage(curso) {
-        let cursos;
-        //Toma valor de un arreglo con datos del LS
-        cursos = this.obtenerProductosLocalStorage();
-        //Agregar el curso al carrito
-        cursos.push(curso);
-        //Agregamos al LS
-        localStorage.setItem('cursos', JSON.stringify(cursos));
-
+    setProductsToLocalStorage(product){
+        let products;
+        products = this.getLocalStorageItems();
+        products.push(product);
+        localStorage.setItem('productos',JSON.stringify(products));        
     }
 
-    //Comprueba que haya elementos en LS
-    obtenerProductosLocalStorage() {
-        let cursosLS;
-
-        //Comprobados si hay algo en ls
-        if (localStorage.getItem('cursos') === null) {
-            cursosLS = [];
+    getLocalStorageItems(){
+        let productLS;
+        if (localStorage.getItem('productos') === null) {
+            productLS = [];
+        }else{
+            productLS = JSON.parse(localStorage.getItem('productos'));
         }
-        else {
-            cursosLS = JSON.parse(localStorage.getItem('cursos'));
-        }
-        return cursosLS;
+        return productLS;
     }
 
-    
-
-    //Imprime los cursos de LS en el carrito
-    leerLocalStorage() {
-        let cursosLS;
-        cursosLS = this.obtenerProductosLocalStorage();
-
-        cursosLS.forEach(function (curso) {
-            //Construir el template
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <img src="${curso.imagen}" width=100>
-                </td>
-                <td>${curso.titulo}</td>
-                <td>${curso.precio}</td>
-                <td>
-                    <a href="#" class="borrar-curso fas fa-times-circle" data-id="${curso.id}"></a>
-                </td>
-            `;
-            listaProductos.appendChild(row);
-        });
-
-    }
-
-    //Imprime los cursos de LS en el carrito
-    leerLocalStorageCompra() {
-        let cursosLS;
-        cursosLS = this.obtenerProductosLocalStorage();
-        cursosLS.forEach(function (curso) {
-            //Construir el template        
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>
-                    <img src="${curso.imagen}" width=100>
-                </td>
-                <td>${curso.titulo}</td>
-                <td>${curso.precio}</td>
-                
-                <td>
-                    <input type="number" class="form-control cantidad" min="1" value=${curso.cantidad}>
-                </td>
-                <td id="subtotall">${curso.precio * curso.cantidad}</td>
-                <td>
-                    <a href="#" class="borrar-curso fas fa-times-circle" style="font-size:30px" data-id="${curso.id}"></a>
-                </td>
-            `;
-            listaCompra.appendChild(row);
-        });
-    }
-
-    //Eliminar curso por ID del LS
-    eliminarProductoLocalStorage(cursoID){
-        let cursosLS;
-        //Obtenemos el arreglo de cursos
-        cursosLS = this.obtenerProductosLocalStorage();
-        //Comparamos el id de curso borrado con LS
-        cursosLS.forEach(function(cursoLS, index){
-            if(cursoLS.id === cursoID){
-                cursosLS.splice(index,1);
+    deleteProductfromLocalStore(productiD){
+        let productsLS;
+        productsLS = this.getLocalStorageItems();
+        productsLS.forEach((productLS,index)=>{
+            if (productLS.id === productiD) {
+                productsLS.splice(index,1);
             }
         });
-        //Añadimos el arreglo actual a storage
-        localStorage.setItem('cursos', JSON.stringify(cursosLS));
+        localStorage.setItem('productos', JSON.stringify(productsLS));
     }
 
-    //Elimina los cursos del LS
-    vaciarLocalStorage(){
+    //Cargar Productos en LS al Carrito
+    loadLSproducts(){
+        let productsLS;
+        productsLS=this.getLocalStorageItems();
+        productsLS.forEach((product)=>{
+            const item = document.createElement('tr');
+            item.innerHTML = `
+            <td>
+                <img src="${product.image}" width=100>
+            </td>
+            <td>${product.tittle}</td>
+            <td>${product.price}</td>
+            <td>
+                <a href="#" class="borrar-producto fas fa-times-circle" data-id="${product.id}">X</a>
+            </td>
+            `;
+            productList.appendChild(item);
+        });
+    }
+
+    //Cargar Carrito/LS al Checkout
+    loadCheckout(){
+        let productsLS;
+        productsLS=this.getLocalStorageItems();
+        productsLS.forEach((product)=>{
+            const item = document.createElement('tr');
+            item.innerHTML = `
+            <td>
+                <img src="${product.image}" width=100>
+            </td>
+            <td>${product.tittle}</td>
+            <td>${product.price}</td>
+            <td>
+                <input type="number" class="form-control cantidad" min="1" value="${product.pieces}">
+            </td>
+            <td>${product.price*product.pieces}</td>     
+            <td>
+                <a href="#" class="borrar-producto fas fa-times-circle" data-id="${product.id}">X</a>
+            </td> 
+            `;
+            shopList.appendChild(item);
+        });
+    }
+
+    //Vaciar LS
+    clearLocalStorage(){
         localStorage.clear();
     }
 
-    //Procesando compra
-    procesarPedido(e){
+    //Procesar Pedido
+    checkout(e){
         e.preventDefault();
-        console.log();
-        if(this.obtenerProductosLocalStorage().length === 0){            
-                Swal.fire({
-                    type: 'error',
-                    title: 'Oops...',
-                    text: 'El carrito está vacío',
-                    showConfirmButton: false,
-                    timer: 2000
-                })
-        }
-        else{
+        if (this.getLocalStorageItems().length===0) {
+            Swal.fire({
+                type: 'error',
+                title: 'Oops...',
+                text: 'El carrito esta vacio, agregue algun producto!',
+                timer: 2000,
+                showConfirmButton: false    
+            });
+        }else{
             location.href="compra.html";
         }
     }
 
-    obtenerEvento(e) {
-        e.preventDefault();
-        let id, cantidad, curso, cursoLS;
-        console.log(e.target.classList);
-        if (e.target.classList.contains('cantidad')) {
-            curso = e.target.parentElement.parentElement;
-            id = curso.querySelector('a').getAttribute('data-id');
-            cantidad = curso.querySelector('input').value;
-            let cursosLS = this.obtenerProductosLocalStorage();
-            cursosLS.forEach(function (cursoLS, index) {
-                if (cursoLS.id === id) {
-                    cursoLS.cantidad = cantidad;
-                }
-    
-            });
-            localStorage.setItem('cursos', JSON.stringify(cursosLS));
-        }
-    }
-    
+    //Calcular total e IVA de la compra
+    payment(){
+        let productLS = this.getLocalStorageItems();
+        let total=0;
+        let subtotal=0;
+        let IVA = 0;
 
-    calcularTotal() {
-        let cursosLS;
-        let total = 0, igv = 0, subtotal = 0;
-        cursosLS = this.obtenerProductosLocalStorage();
-        for (let index = 0; index < cursosLS.length; index++) {
-            let element = Number(cursosLS[index].precio * cursosLS[index].cantidad);
-            total = total + element;
-    
+        for (let i = 0; i < productLS.length; i++) {
+            let item = Number(productLS[i].price * productLS[i].pieces);
+            total = total + item;
         }
-        igv = parseFloat(total * 0.18).toFixed(2);
-        subtotal = parseFloat(total - igv).toFixed(2);
-    
-        document.getElementById('subtotal').innerHTML = "S/. " + subtotal;
-    
-        document.getElementById('igv').innerHTML = "S/. " + igv;
-        document.getElementById('total').innerHTML = "S/. " + total.toFixed(2);
+
+        IVA = parseFloat(total * 0.17).toFixed(2);
+        subtotal = parseFloat(total-IVA).toFixed(2);
+
+        document.getElementById('subtotal').innerHTML = "$ " + subtotal;
+        document.getElementById('igv').innerHTML = "$ " + IVA;
+        document.getElementById('total').innerHTML = "$ " + total.toFixed(2);
     }
 
-    
 
 }
